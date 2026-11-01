@@ -8,7 +8,7 @@ import colorama
 from colorama import Fore, Style
 colorama.init(convert=True, autoreset=True)
 
-CWSI_VERSION = "0.1.0"
+CWSI_VERSION = "0.1.0.1"
 VERSION_CWSI_URL = "https://raw.githubusercontent.com/Cymrakk/cymrakk-workspace-installer/refs/heads/main/version.txt"
 GITHUB_CWSI_URL_RELEASE  = "https://github.com/Cymrakk/cymrakk-workspace-installer/releases"
 GITHUB_CWSI_URL_SRC  = "https://github.com/Cymrakk/cymrakk-workspace-installer"

@@ -2,22 +2,25 @@ import os
 import shutil
 import subprocess
 import configparser
+import pathlib
+from datetime import datetime
 
 def build_project():
     print("--- STARTING COMPILE ---")
-    compiler_dir = os.path.dirname(os.path.abspath(__file__))  # main\compiler
-    main_dir = os.path.dirname(compiler_dir)                   # main
-    root_dir = os.path.dirname(main_dir)                       # корень всего проекта
+    compiler_dir = os.path.dirname(os.path.abspath(__file__))
+    main_dir = os.path.dirname(compiler_dir)
+    root_dir = os.path.dirname(main_dir)
     
-    src_dir = os.path.join(main_dir, "src")                    # main\src
-    src_libs = os.path.join(src_dir, "libs")                   # main\src\libs
-    src_pathmap = os.path.join(src_dir, "pathmap.ini")         # main\src\pathmap.ini
-    src_cwsi = os.path.join(src_dir, "cwsi.py")                # main\src\cwsi.py
+    src_dir = os.path.join(main_dir, "src")
+    src_libs = os.path.join(src_dir, "libs")
+    src_pathmap = os.path.join(src_dir, "pathmap.ini")
+    src_cwsi = os.path.join(src_dir, "cwsi.py")
     
-    build_dir = os.path.join(root_dir, "build")                # корень\build
-    build_libs_dir = os.path.join(build_dir, "libs")           # корень\build\libs
+    timestamp = datetime.now().strftime("%d.%m.%Y_%H-%M")
+    build_dir = os.path.join(root_dir, "build", timestamp)
+    build_libs_dir = os.path.join(build_dir, "libs")
     
-    output_exe_dir = os.path.join(build_libs_dir, "cymrakk", "cwsi") # корень\build\libs\cymrakk\cwsi
+    output_exe_dir = os.path.join(build_libs_dir, "cymrakk", "cwsi")
 
     if not os.path.exists(src_pathmap):
         print(f"Error: {src_pathmap} not found!")
@@ -32,11 +35,12 @@ def build_project():
     if "LIBRARIES" in config:
         for key, value in config["LIBRARIES"].items():
             if value:
-                parts = value.split(os.sep)
-                if len(parts) > 1 and parts == "libs":
-                    libs_to_copy.add(parts)
-                    rel_parts = ["..", ".."] + parts[1:]
-                    embedded_map[key] = os.path.join(*rel_parts)
+                p = pathlib.Path(value)
+                if p.parts and p.parts[0] == "libs" and len(p.parts) > 1:
+                    lib_name = p.parts[1]
+                    libs_to_copy.add(lib_name)
+                    rel_path = pathlib.Path("..") / ".." / "libs" / pathlib.Path(*p.parts[1:])
+                    embedded_map[key] = str(rel_path)
                 else:
                     embedded_map[key] = value
 
@@ -51,7 +55,7 @@ def build_project():
         specific_src_lib = os.path.join(src_libs, lib_name)
         if os.path.exists(specific_src_lib):
             shutil.copytree(specific_src_lib, os.path.join(build_libs_dir, lib_name), dirs_exist_ok=True)
-            print(f"Copied library to build\\libs: {lib_name}")
+            print(f"Copied library to build\\{timestamp}\\libs: {lib_name}")
 
     with open(src_cwsi, 'r', encoding='utf-8') as f:
         code = f.read()
@@ -69,7 +73,7 @@ def build_project():
     final_exe_path = os.path.join(output_exe_dir, "cwsi.exe")
     os.makedirs(output_exe_dir, exist_ok=True)
     shutil.move(os.path.join(src_dir, "dist", "cwsi.exe"), final_exe_path)
-    print("Moved cwsi.exe to build\\libs\\cymrakk\\cwsi\\")
+    print(f"Moved cwsi.exe to build\\{timestamp}\\libs\\cymrakk\\cwsi\\")
     
     release_modules_dir = os.path.join(output_exe_dir, "modules")
     os.makedirs(release_modules_dir, exist_ok=True)
@@ -77,7 +81,7 @@ def build_project():
     for file_name in os.listdir(src_dir):
         if file_name.endswith(".py") and file_name not in ["cwsi.py", "cwsi_temp.py"]:
             shutil.copy(os.path.join(src_dir, file_name), os.path.join(release_modules_dir, file_name))
-    print("Copied modules to build\\libs\\cymrakk\\cwsi\\modules\\")
+    print(f"Copied modules to build\\{timestamp}\\libs\\cymrakk\\cwsi\\modules\\")
 
     start_bat_path = os.path.join(build_dir, "start.bat")
     bat_content = (
@@ -87,7 +91,7 @@ def build_project():
     )
     with open(start_bat_path, "w", encoding="utf-8") as bat_file:
         bat_file.write(bat_content)
-    print("Created start.bat in build\\")
+    print(f"Created start.bat in build\\{timestamp}\\")
 
     os.remove(temp_cwsi)
     shutil.rmtree(os.path.join(src_dir, "dist"), ignore_errors=True)
