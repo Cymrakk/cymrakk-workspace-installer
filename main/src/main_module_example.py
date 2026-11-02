@@ -1,5 +1,12 @@
 import os
 import sys
+
+# --------------------------------------
+# Environment security validation check
+if not getattr(sys, 'frozen', False) or 'cwsi' not in sys.modules:
+    sys.exit(1)
+# --------------------------------------
+
 import importlib.util
 from cwsi import CWSI_LIBS_MAP  # Importing the embedded map into the script's memory
 
@@ -10,9 +17,10 @@ def start(libs):
     """
     print("--- CUSTOM MODULE STARTED ---")
 
-    # Get the path directly and convert it to an absolute path
-    # In pathmap.ini: example = libs\example\example.txt
-    file_path = os.path.abspath(CWSI_LIBS_MAP["example"])
+    # Resolve the absolute path relative to the executable directory
+    exe_dir = os.path.dirname(os.path.abspath(sys.executable))
+    file_path = os.path.abspath(os.path.join(exe_dir, CWSI_LIBS_MAP["example"]))
+    
     print(f"Target file path: {file_path}")
 
     # =========================================================================
